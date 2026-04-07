@@ -1,0 +1,40 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+websockets==14.2
+pydantic==2.11.5
+pydantic-settings==2.7.0
+sqlalchemy==2.0.36
+aiosqlite==0.20.0
+alembic==1.14.0
+python-dotenv==1.1.0
+
+# LLM
+litellm==1.70.4
+
+# RAG
+chromadb==0.5.23
+sentence-transformers==3.3.1
+langchain-text-splitters==0.3.3
+
+# TTS
+edge-tts==7.0.2
+
+# STT
+speechmatics-python==4.0.0
+
+# PDF
+pypdf==5.5.0
+
+# ML Analysis (kept from original)
+librosa==0.10.2
+scikit-learn==1.5.2
+joblib==1.5.1
+numpy==2.2.6
+scipy==1.15.3
+soundfile==0.12.1
+
+# Utilities
+httpx==0.28.1
+aiohttp==3.11.18
+aiofiles==24.1.0
