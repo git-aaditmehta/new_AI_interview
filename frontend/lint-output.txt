@@ -1,0 +1,59 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\components\IsoCity.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\components\landing\HeroSection.jsx
+   1:8   error  'React' is defined but never used              no-unused-vars
+   4:32  error  'Sphere' is defined but never used             no-unused-vars
+  18:30  error  Unknown property 'args' found                  react/no-unknown-property
+  19:44  error  Unknown property 'wireframe' found             react/no-unknown-property
+  19:61  error  Unknown property 'transparent' found           react/no-unknown-property
+  23:27  error  Unknown property 'args' found                  react/no-unknown-property
+  40:39  error  'onGetStarted' is missing in props validation  react/prop-types
+  51:25  error  Unknown property 'intensity' found             react/no-unknown-property
+  52:29  error  Unknown property 'position' found              react/no-unknown-property
+  52:52  error  Unknown property 'intensity' found             react/no-unknown-property
+  53:23  error  Unknown property 'position' found              react/no-unknown-property
+  53:49  error  Unknown property 'intensity' found             react/no-unknown-property
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\components\landing\Navbar.jsx
+  1:8   error  'React' is defined but never used              no-unused-vars
+  5:34  error  'onGetStarted' is missing in props validation  react/prop-types
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\main.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\pages\Interview.jsx
+    1:8   error    'React' is defined but never used                                                                                               no-unused-vars
+   33:14  error    'e' is defined but never used                                                                                                   no-unused-vars
+   58:14  error    'e' is defined but never used                                                                                                   no-unused-vars
+  161:6   warning  React Hook useEffect has missing dependencies: 'speakText' and 'voiceCode'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  269:15  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                 react/no-unescaped-entities
+  269:33  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                 react/no-unescaped-entities
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\pages\Intro.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\pages\Landing.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\pages\Results.jsx
+    1:8    error  'React' is defined but never used                                no-unused-vars
+   54:11   error  'e' is defined but never used                                    no-unused-vars
+   54:14   error  Empty block statement                                            no-empty
+  106:55   error  'i' is defined but never used                                    no-unused-vars
+  116:98   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  116:116  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  119:29   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  119:50   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\divvy\OneDrive\Desktop\IPD DOCS\new_AI_interview\frontend\src\utils\api.js
+  14:83  error  'e' is defined but never used  no-unused-vars
+  14:85  error  Empty block statement          no-empty
+
+✖ 34 problems (33 errors, 1 warning)
+

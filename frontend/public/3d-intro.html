@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrepWise - AI Interview Pro</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #010208;
+      font-family: 'Courier New', Courier, monospace;
+      color: #fff;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 8vh;
+    }
+    h1 {
+      font-size: 3rem;
+      margin: 0;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 900;
+      text-shadow: 0 0 20px #00eeff, 0 0 40px #7722ff;
+      opacity: 0;
+      font-family: sans-serif;
+    }
+    h2 {
+      font-size: 1.2rem;
+      color: #d0e8f8;
+      letter-spacing: 0.2em;
+      margin-top: 10px;
+      text-shadow: 0 0 10px #00eeff;
+      opacity: 0;
+      font-family: sans-serif;
+    }
+    #speech-bubble {
+      position: absolute;
+      background: rgba(26, 37, 53, 0.9);
+      border: 1px solid #00eeff;
+      box-shadow: 0 0 15px rgba(0, 238, 255, 0.4);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-family: sans-serif;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      transform: translate(-50%, -150%);
+      z-index: 20;
+    }
+    #speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 10px 10px 0;
+      border-style: solid;
+      border-color: #00eeff transparent transparent transparent;
+    }
+    #flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #cursor {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(0, 238, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, border-color 0.2s;
+    }
+    .cursor-hover {
+      width: 40px !important;
+      height: 40px !important;
+      border-color: #00eeff !important;
+      background: rgba(0, 238, 255, 0.1);
+    }
+    #enter-btn {
+      margin-top: 30px;
+      padding: 15px 40px;
+      background: rgba(0, 238, 255, 0.1);
+      border: 2px solid #00eeff;
+      color: #00eeff;
+      font-size: 1.2rem;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(0, 238, 255, 0.3);
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: auto; /* Allow clicks */
+    }
+    #enter-btn:hover {
+      background: rgba(0, 238, 255, 0.3);
+      box-shadow: 0 0 30px rgba(0, 238, 255, 0.8);
+      transform: scale(1.05);
+    }
+  </style>
+
+  <!-- Three.js and GSAP via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  
+  <!-- Postprocessing for Bloom -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+  
+  <div id="ui-layer">
+    <h1 id="title">The Interviewer</h1>
+    <h2 id="tagline">Next-Gen AI Interview Platform</h2>
+    <button id="enter-btn" onclick="enterRoom()">Enter Room</button>
+  </div>
+
+  <div id="speech-bubble">I'll be your interviewer today 🤖</div>
+  <div id="flash"></div>
+  <div id="cursor"></div>
+
+  <script>
+    // --- 1. Basic Setup & Scene ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x010208);
+    scene.fog = new THREE.FogExp2(0x010208, 0.02);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Camera starts far back for entrance animation
+    camera.position.set(0, 2, 30);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    container.appendChild(renderer.domElement);
+
+    // --- Post-processing (Bloom) ---
+    const renderScene = new THREE.RenderPass(scene, camera);
+    const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    bloomPass.threshold = 0.2;
+    bloomPass.strength = 1.2;
+    bloomPass.radius = 0.5;
+
+    const composer = new THREE.EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
+    // --- 2. Environment (Stars & Nebula) ---
+    // Starfield
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 3000;
+    const starPositions = new Float32Array(starCount * 3);
+    for(let i=0; i<starCount*3; i++) {
+      starPositions[i] = (Math.random() - 0.5) * 200;
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMaterial = new THREE.PointsMaterial({ color: 0x88bbff, size: 0.1, transparent: true, opacity: 0 });
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
+    // Floating Dust
+    const dustGeo = new THREE.BufferGeometry();
+    const dustCount = 500;
+    const dustPos = new Float32Array(dustCount * 3);
+    for(let i=0; i<dustCount; i++) {
+      dustPos[i*3] = (Math.random() - 0.5) * 40;
+      dustPos[i*3+1] = (Math.random() - 0.5) * 40;
+      dustPos[i*3+2] = (Math.random() - 0.5) * 40;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    const dustMat = new THREE.PointsMaterial({ color: 0xaaddff, size: 0.05, transparent: true, opacity: 0.6 });
+    const dust = new THREE.Points(dustGeo, dustMat);
+    scene.add(dust);
+
+    // --- 3. Lighting ---
+    const ambientLight = new THREE.AmbientLight(0x0a1a2a, 2.5);
+    scene.add(ambientLight);
+
+    const spotLight = new THREE.SpotLight(0x4488ff, 5);
+    spotLight.position.set(-10, 15, 10);
+    spotLight.angle = Math.PI / 4;
+    spotLight.penumbra = 0.5;
+    scene.add(spotLight);
+
+    const fillLight = new THREE.PointLight(0x7700ff, 2, 20);
+    fillLight.position.set(0, -5, 5);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0x00aaff, 3, 20);
+    rimLight.position.set(5, 5, -5);
+    scene.add(rimLight);
+
+    // --- 4. Materials Global ---
+    const defaultOpacity = { opacity: 0 }; // Used for entrance fade-in
+    const darkMetalMat = new THREE.MeshStandardMaterial({ 
+      color: 0x1a2535, roughness: 0.7, metalness: 0.4, transparent: true, opacity: 0 
+    });
+
+    // --- 5. Office Objects ---
+    const floatingObjects = [];
+
+    // Desk
+    const deskGroup = new THREE.Group();
+    deskGroup.position.set(0, -2, 0);
+    const deskGeo = new THREE.BoxGeometry(8, 0.4, 4);
+    const desk = new THREE.Mesh(deskGeo, darkMetalMat);
+    deskGroup.add(desk);
+
+    // Glowing cyan edge trim
+    const deskEdgeGeo = new THREE.EdgesGeometry(deskGeo);
+    const deskEdgeMat = new THREE.LineBasicMaterial({ color: 0x00eeff, transparent: true, opacity: 0 });
+    const deskEdge = new THREE.LineSegments(deskEdgeGeo, deskEdgeMat);
+    deskGroup.add(deskEdge);
+    scene.add(deskGroup);
+    floatingObjects.push({ mesh: deskGroup, speed: 0.2, amp: 0.2, rotX: 0.001, rotY: 0.002, rotZ: 0 });
+
+    // Laptop (Clickable)
+    const laptopGroup = new THREE.Group();
+    laptopGroup.position.set(-1, 0.25, 0);
+    
+    const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 1.5), darkMetalMat);
+    laptopGroup.add(laptopBase);
+    
+    const laptopScreenBox = new THREE.Mesh(new THREE.BoxGeometry(2, 1.2, 0.05), darkMetalMat);
+    laptopScreenBox.position.set(0, 0.6, -0.7);
+    laptopScreenBox.rotation.x = -0.1; // Tilted slightly back
+    laptopGroup.add(laptopScreenBox);
+
+    // Laptop Screen Texture (Canvas)
+    const screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 512;
+    screenCanvas.height = 256;
+    const ctx = screenCanvas.getContext('2d');
+    
+    function drawScreen(cursorVisible) {
+      ctx.fillStyle = '#001428';
+      ctx.fillRect(0, 0, 512, 256);
+      ctx.font = '24px "Courier New", monospace';
+      ctx.fillStyle = '#00ccff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Ready for your interview?', 256, 128);
+      if(cursorVisible) {
+        ctx.fillText('_', 256, 158);
+      }
+    }
+    drawScreen(true);
+    const screenTex = new THREE.CanvasTexture(screenCanvas);
+    const screenMat = new THREE.MeshBasicMaterial({ map: screenTex, transparent: true, opacity: 0 });
+    const screenPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.1), screenMat);
+    screenPlane.position.set(0, 0.6, -0.67);
+    screenPlane.rotation.x = -0.1;
+    laptopGroup.add(screenPlane);
+
+    // Laptop glow light
+    const laptopLight = new THREE.PointLight(0x00ccff, 4, 10);
+    laptopLight.position.set(0, 1, 0);
+    laptopGroup.add(laptopLight);
+
+    deskGroup.add(laptopGroup); // Relative to desk
+
+    // Floating Papers
+    const paperMat = new THREE.MeshStandardMaterial({ color: 0xd0e8f8, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+    for(let i=0; i<8; i++) {
+      const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.7), paperMat);
+      paper.position.set((Math.random()-0.5)*8, Math.random()*4, (Math.random()-0.5)*4);
+      paper.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+      scene.add(paper);
+      floatingObjects.push({ 
+        mesh: paper, 
+        speed: 0.5 + Math.random(), 
+        amp: 0.5, 
+        rotX: Math.random()*0.02, 
+        rotY: Math.random()*0.02, 
+        rotZ: Math.random()*0.02 
+      });
+    }
+
+    // Coffee Mug
+    const mugGroup = new THREE.Group();
+    mugGroup.position.set(2, 1.5, 1);
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.6, 16), paperMat);
+    mugGroup.add(mug);
+    // Steam rings
+    const ringGeo = new THREE.TorusGeometry(0.15, 0.03, 8, 16);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xaaddff, transparent: true, opacity: 0 });
+    const rings = [];
+    for(let i=0; i<3; i++) {
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = 0.5 + i*0.3;
+      mugGroup.add(ring);
+      rings.push({ mesh: ring, offset: i });
+    }
+    scene.add(mugGroup);
+    floatingObjects.push({ mesh: mugGroup, speed: 0.8, amp: 0.3, rotX: 0.01, rotY: 0.02, rotZ: 0.01 });
+
+    // Nameplate
+    const npGroup = new THREE.Group();
+    const npBase = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.2), darkMetalMat);
+    npGroup.add(npBase);
+    
+    const npCanvas = document.createElement('canvas');
+    npCanvas.width = 256; npCanvas.height = 64;
+    const nctx = npCanvas.getContext('2d');
+    nctx.fillStyle = '#1a2535'; nctx.fillRect(0,0,256,64);
+    nctx.font = '20px Arial'; nctx.fillStyle = '#ffffff'; nctx.textAlign = 'center'; nctx.textBaseline='middle';
+    nctx.fillText('Interview Room 01', 128, 32);
+    const npTex = new THREE.CanvasTexture(npCanvas);
+    const npPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.3), new THREE.MeshBasicMaterial({map: npTex, transparent:true, opacity:0}));
+    npPlane.position.z = 0.11;
+    npGroup.add(npPlane);
+    npGroup.position.set(-2.5, 1, 1);
+    scene.add(npGroup);
+    floatingObjects.push({ mesh: npGroup, speed: 0.6, amp: 0.2, rotX: 0.005, rotY: -0.01, rotZ: 0 });
+
+
+    // --- 6. Robot (Hero Character) ---
+    const robotGroup = new THREE.Group();
+    robotGroup.position.set(3, -0.5, -2);
+    robotGroup.rotation.y = -0.3;
+
+    // Torso
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 0.7), darkMetalMat);
+    robotGroup.add(torso);
+
+    // Glowing Chest Panel
+    const chestPan = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.5), new THREE.MeshStandardMaterial({color: 0x00eeff, emissive: 0x00eeff, emissiveIntensity: 1, transparent:true, opacity:0}));
+    chestPan.position.set(0, 0.2, 0.36);
+    robotGroup.add(chestPan);
+
+    // Head
+    const headGroup = new THREE.Group();
+    headGroup.position.set(0, 1.4, 0);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), darkMetalMat);
+    headGroup.add(head);
+
+    // Eyes
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x00eeff, emissive: 0x00eeff, emissiveIntensity: 2, transparent:true, opacity:0 });
+    const eyeL = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), eyeMat);
+    eyeL.position.set(-0.25, 0.1, 0.51);
+    const eyeR = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), eyeMat);
+    eyeR.position.set(0.25, 0.1, 0.51);
+    headGroup.add(eyeL);
+    headGroup.add(eyeR);
+
+    // Antenna
+    const antStem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4), darkMetalMat);
+    antStem.position.set(0, 0.7, 0);
+    headGroup.add(antStem);
+    const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.1), eyeMat);
+    antTip.position.set(0, 0.9, 0);
+    headGroup.add(antTip);
+
+    robotGroup.add(headGroup);
+
+    // Arms
+    const armGeo = new THREE.CylinderGeometry(0.15, 0.15, 1);
+    // Right Arm (Idle)
+    const rightArm = new THREE.Group();
+    rightArm.position.set(-0.9, 0.8, 0);
+    const rArmMesh = new THREE.Mesh(armGeo, darkMetalMat);
+    rArmMesh.position.y = -0.5;
+    rightArm.add(rArmMesh);
+    robotGroup.add(rightArm);
+    rightArm.rotation.z = 0.2;
+
+    // Left Arm (Waving)
+    const leftArm = new THREE.Group();
+    leftArm.position.set(0.9, 0.8, 0);
+    const lArmMesh = new THREE.Mesh(armGeo, darkMetalMat);
+    lArmMesh.position.y = -0.5;
+    leftArm.add(lArmMesh);
+    const lHand = new THREE.Mesh(new THREE.SphereGeometry(0.2), darkMetalMat);
+    lHand.position.y = -1.1;
+    leftArm.add(lHand);
+    robotGroup.add(leftArm);
+    leftArm.rotation.z = -2.5; // Raised
+
+    // Legs
+    const legGeo = new THREE.CylinderGeometry(0.2, 0.15, 1.2);
+    const leftLeg = new THREE.Mesh(legGeo, darkMetalMat);
+    leftLeg.position.set(0.4, -1.5, 0);
+    robotGroup.add(leftLeg);
+    const rightLeg = new THREE.Mesh(legGeo, darkMetalMat);
+    rightLeg.position.set(-0.4, -1.5, 0);
+    robotGroup.add(rightLeg);
+
+    scene.add(robotGroup);
+    floatingObjects.push({ mesh: robotGroup, speed: 0.8, amp: 0.3, rotX: 0, rotY: 0, rotZ: 0 });
+
+    // --- 7. Entrance Animation (GSAP) ---
+    // Extract all materials to fade them in
+    const faderMats = [starMaterial, dustMat, deskEdgeMat, darkMetalMat, screenMat, paperMat, ringMat, npPlane.material, chestPan.material, eyeMat];
+    
+    gsap.to(camera.position, {
+      z: 14,
+      duration: 3,
+      ease: "power2.out"
+    });
+
+    faderMats.forEach(mat => {
+      gsap.to(mat, { opacity: 1, duration: 2, ease: "power1.inOut" });
+    });
+    
+    // Eyes flicker
+    gsap.to(eyeMat, {
+       emissiveIntensity: 3.5,
+       duration: 0.1,
+       yoyo: true,
+       repeat: 5,
+       delay: 1.5,
+       onComplete: () => {
+         // Cycle eye glow
+         gsap.to(eyeMat, { emissiveIntensity: 3.5, duration: 1, yoyo: true, repeat: -1, ease: "sine.inOut" });
+       }
+    });
+
+    // UI Fade in
+    gsap.to('#title', { opacity: 1, y: 0, duration: 1, delay: 1.5, ease: "back.out" });
+    gsap.to('#tagline', { opacity: 1, y: 0, duration: 1, delay: 2, ease: "back.out" });
+    gsap.to('#enter-btn', { opacity: 1, duration: 1, delay: 2.5 });
+
+    // --- 8. Interaction (Mouse & Raycaster) ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let targetCameraPos = { x: 0, y: 2 };
+    
+    // Custom cursor DOM
+    const cursorDOM = document.getElementById('cursor');
+
+    window.addEventListener('mousemove', (e) => {
+      // Normalize mouse to -1 to 1
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      
+      cursorDOM.style.left = e.clientX + 'px';
+      cursorDOM.style.top = e.clientY + 'px';
+
+      // Parallax target
+      targetCameraPos.x = mouse.x * 2;
+      targetCameraPos.y = 2 + mouse.y * 1.5;
+    });
+
+    let robotHovered = false;
+    let laptopHovered = false;
+    const speechBubble = document.getElementById('speech-bubble');
+
+    function checkIntersections() {
+      raycaster.setFromCamera(mouse, camera);
+
+      // Laptop intersections
+      const laptopHits = raycaster.intersectObject(laptopGroup, true);
+      if(laptopHits.length > 0) {
+        if(!laptopHovered) {
+          laptopHovered = true;
+          document.body.style.cursor = 'none';
+          cursorDOM.classList.add('cursor-hover');
+          gsap.to(laptopLight, { intensity: 8, duration: 0.3 });
+          gsap.to(laptopScreenBox.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 0.3 });
+          gsap.to(screenPlane.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 0.3 });
+        }
+      } else {
+        if(laptopHovered) {
+          laptopHovered = false;
+          cursorDOM.classList.remove('cursor-hover');
+          gsap.to(laptopLight, { intensity: 4, duration: 0.3 });
+          gsap.to(laptopScreenBox.scale, { x: 1, y: 1, z: 1, duration: 0.3 });
+          gsap.to(screenPlane.scale, { x: 1, y: 1, z: 1, duration: 0.3 });
+        }
+      }
+
+      // Robot intersections
+      const robotHits = raycaster.intersectObject(robotGroup, true);
+      if(robotHits.length > 0) {
+        if(!robotHovered) {
+          robotHovered = true;
+          gsap.to(robotGroup.scale, { x: 1.05, y: 1.05, z: 1.05, duration: 0.4 });
+          speechBubble.style.opacity = '1';
+        }
+        // Move speech bubble to project coordinates
+        const vector = new THREE.Vector3();
+        headGroup.getWorldPosition(vector);
+        vector.y += 1; // above head
+        vector.project(camera);
+        const x = (vector.x * .5 + .5) * window.innerWidth;
+        const y = (-(vector.y * .5) + .5) * window.innerHeight;
+        speechBubble.style.left = `${x}px`;
+        speechBubble.style.top = `${y}px`;
+      } else {
+        if(robotHovered) {
+          robotHovered = false;
+          gsap.to(robotGroup.scale, { x: 1, y: 1, z: 1, duration: 0.4 });
+          speechBubble.style.opacity = '0';
+        }
+      }
+    }
+
+    // Click event for Laptop
+    window.addEventListener('click', () => {
+      if(laptopHovered) {
+        enterRoom();
+      }
+    });
+
+    // Enter Room logic
+    function enterRoom() {
+        // Zoom camera into laptop
+        const targetPos = new THREE.Vector3();
+        laptopScreenBox.getWorldPosition(targetPos);
+        
+        gsap.to(camera.position, {
+          x: targetPos.x,
+          y: targetPos.y,
+          z: targetPos.z + 1,
+          duration: 1.5,
+          ease: "power2.inOut",
+          onComplete: () => {
+             // White flash
+             gsap.to('#flash', { opacity: 1, duration: 0.2, onComplete: () => {
+               // Redirect to the interview logic app
+               window.parent.location.href = '/home'; // Navigate the parent React application
+             }});
+          }
+        });
+    }
+
+    // --- 9. Animation Loop ---
+    const clock = new THREE.Clock();
+    let cursorBlinkTimer = 0;
+    let cursorVisible = true;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const t = clock.getElapsedTime();
+      const dt = clock.getDelta();
+
+      // Camera Parallax
+      camera.position.x += (targetCameraPos.x - camera.position.x) * 0.04;
+      camera.position.y += (targetCameraPos.y - camera.position.y) * 0.04;
+      camera.lookAt(0, 0, 0);
+
+      // Float objects
+      floatingObjects.forEach((obj, idx) => {
+        obj.mesh.position.y += Math.sin(t * obj.speed + idx) * 0.005 * obj.amp;
+        obj.mesh.rotation.x += obj.rotX;
+        obj.mesh.rotation.y += obj.rotY;
+        obj.mesh.rotation.z += obj.rotZ;
+      });
+
+      // Robot specific animations
+      leftArm.rotation.z = -2.5 + Math.sin(t * 2) * 0.3; // waving
+      
+      if(robotHovered) {
+        // Look at camera
+        const targetRot = Math.atan2(camera.position.x - robotGroup.position.x, camera.position.z - robotGroup.position.z);
+        // Smooth rotation
+        robotGroup.rotation.y += (targetRot - robotGroup.rotation.y) * 0.05;
+      } else {
+        // Return to idle rotation
+        robotGroup.rotation.y += (-0.3 - robotGroup.rotation.y) * 0.05;
+      }
+
+      // Steam animation
+      rings.forEach(r => {
+        r.mesh.position.y += 0.01;
+        r.mesh.scale.set(1 + r.mesh.position.y*0.2, 1 + r.mesh.position.y*0.2, 1);
+        r.mesh.material.opacity = Math.max(0, 0.4 - (r.mesh.position.y - 0.5) * 0.2);
+        if(r.mesh.position.y > 1.5) {
+          r.mesh.position.y = 0.5;
+          r.mesh.scale.set(1,1,1);
+        }
+      });
+
+      // Laptop Cursor Blink
+      cursorBlinkTimer += 0.016;
+      if(cursorBlinkTimer > 0.5) {
+        cursorVisible = !cursorVisible;
+        cursorBlinkTimer = 0;
+        drawScreen(cursorVisible);
+        screenTex.needsUpdate = true;
+      }
+
+      // Dust
+      const positions = dust.geometry.attributes.position.array;
+      for(let i=1; i<dustCount*3; i+=3) {
+        positions[i] += 0.01;
+        if(positions[i] > 20) positions[i] = -20;
+      }
+      dust.geometry.attributes.position.needsUpdate = true;
+
+      checkIntersections();
+      
+      // Render
+      composer.render();
+    }
+    
+    // Start Loop
+    animate();
+
+    // Responsive
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
