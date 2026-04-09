@@ -19,6 +19,7 @@ langchain-text-splitters==0.3.3
 
 # TTS
 edge-tts==7.0.2
+azure-cognitiveservices-speech==1.43.0
 
 # STT
 speechmatics-python==4.0.0

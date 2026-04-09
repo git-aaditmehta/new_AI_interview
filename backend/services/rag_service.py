@@ -10,7 +10,7 @@ Uses 'all-MiniLM-L6-v2' — a fast, high-quality embedding model (~90MB).
 """
 import os
 import uuid
-from typing import List
+from typing import List, Optional
 
 import chromadb
 from chromadb.utils import embedding_functions
@@ -18,22 +18,46 @@ from chromadb.utils import embedding_functions
 from core.config import settings
 
 
-# ── ChromaDB client (persistent) ─────────────────────────────────────────────
-_chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+_chroma_client: Optional["chromadb.PersistentClient"] = None
+_embedding_fn: Optional[
+    "embedding_functions.SentenceTransformerEmbeddingFunction"
+] = None
 
-# Sentence-transformers embedding function (downloaded on first use)
-_embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="all-MiniLM-L6-v2"
-)
+
+def _get_chroma_client() -> "chromadb.PersistentClient":
+    """
+    Lazily create the persistent ChromaDB client.
+
+    Chroma's initialization and embedding downloads can be slow; doing it lazily
+    keeps FastAPI startup fast and avoids import-time hangs.
+    """
+    global _chroma_client
+
+    os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
+    if _chroma_client is None:
+        _chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+    return _chroma_client
+
+
+def _get_embedding_fn() -> "embedding_functions.SentenceTransformerEmbeddingFunction":
+    """Lazily create the sentence-transformers embedding function."""
+    global _embedding_fn
+
+    if _embedding_fn is None:
+        _embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="all-MiniLM-L6-v2"
+        )
+    return _embedding_fn
 
 
 def _get_collection(resume_id: str):
     """Get or create a ChromaDB collection for a specific resume."""
     # ChromaDB collection names must be 3-63 chars, alphanumeric + hyphens
     collection_name = f"resume-{resume_id[:32]}"
-    return _chroma_client.get_or_create_collection(
+    return _get_chroma_client().get_or_create_collection(
         name=collection_name,
-        embedding_function=_embedding_fn,
+        embedding_function=_get_embedding_fn(),
         metadata={"hnsw:space": "cosine"},
     )
 

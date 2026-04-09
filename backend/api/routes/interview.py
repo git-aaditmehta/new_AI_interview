@@ -37,6 +37,7 @@ router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 @router.post("/upload-resume", response_model=ResumeUploadResponse)
 async def upload_resume(file: UploadFile = File(...)):
+    print(f"[Backend] Received resume upload request: {file.filename}")
     """
     1. Read PDF bytes
     2. Extract text + chunk for RAG

@@ -57,14 +57,14 @@
 
 | Step | Task | Status | Notes |
 |---|---|---|---|
-| 4.1 | Scaffold React + Vite project | ⏳ PENDING | |
-| 4.2 | `index.css` design system | ⏳ PENDING | |
-| 4.3 | Landing page | ⏳ PENDING | |
-| 4.4 | Interview page | ⏳ PENDING | |
-| 4.5 | Results page | ⏳ PENDING | |
-| 4.6 | `useWebSocket` hook | ⏳ PENDING | |
-| 4.7 | `useAudioRecorder` hook | ⏳ PENDING | |
-| 4.8 | History page | ⏳ PENDING | |
+| 4.1 | Scaffold React + Vite project | ✅ DONE | Built using standard Vite template |
+| 4.2 | `index.css` design system | ✅ DONE | Rich vibrant dark mode w/ animations |
+| 4.3 | Landing page | ✅ DONE | Implemented with PDF drops and UI |
+| 4.4 | Interview page | ✅ DONE | Websocket streaming connected |
+| 4.5 | Results page | ✅ DONE | Recharts radar component used |
+| 4.6 | `useWebSocket` hook | ✅ DONE | Implemented wrapper |
+| 4.7 | `useAudioRecorder` hook | ✅ DONE | WebAudio record interface added |
+| 4.8 | History page | ⏳ PENDING | Will do in Phase 5 |
 
 ## Phase 5: Integration & Polish
 

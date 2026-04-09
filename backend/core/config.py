@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     # STT
     speechmatics_api_key: str = ""
 
+    # TTS (Azure Speech)
+    azure_speech_key: str = ""
+    azure_speech_region: str = ""
+
     # Database
     database_url: str = "sqlite+aiosqlite:///./interview.db"
 

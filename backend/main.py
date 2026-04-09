@@ -23,7 +23,8 @@ async def lifespan(app: FastAPI):
     """Run startup/shutdown logic."""
     print("[Startup] Initializing database...")
     await init_db()
-    print("[Startup] Database ready ✅")
+    # Avoid UnicodeEncodeError on Windows consoles using legacy code pages (e.g. cp1252)
+    print("[Startup] Database ready")
     yield
     print("[Shutdown] Closing...")
 
